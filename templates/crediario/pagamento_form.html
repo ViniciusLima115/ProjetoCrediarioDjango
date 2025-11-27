@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}Registrar Pagamento{% endblock %}
+{% block content %}
+<h2>Registrar Pagamento</h2>
+
+<form method="post" id="pagamento-form" data-initial-falta="{{ initial_falta|default:'' }}">{% csrf_token %}
+  {# Render each field manually so we can show per-field errors and help text #}
+
+  <div class="mb-3">
+    {{ form.nota.label_tag }}
+    {{ form.nota }}
+    {% if form.nota.errors %}
+      <div class="text-danger small">{{ form.nota.errors.as_text|linebreaksbr }}</div>
+    {% endif %}
+  </div>
+
+  <div class="mb-3">
+    {{ form.cliente.label_tag }}
+    {{ form.cliente }}
+    {% if form.cliente.errors %}
+      <div class="text-danger small">{{ form.cliente.errors.as_text|linebreaksbr }}</div>
+    {% endif %}
+  </div>
+
+  <div class="mb-3">
+    {{ form.valor_pagamento.label_tag }}
+    {{ form.valor_pagamento }}
+    {% if form.valor_pagamento.errors %}
+      <div class="text-danger small">{{ form.valor_pagamento.errors.as_text|linebreaksbr }}</div>
+    {% endif %}
+    <small class="form-text text-muted">Falta pagar: R$ <span id="falta-valor">{{ initial_falta|default:'0.00' }}</span></small>
+  </div>
+
+  <div class="mb-3">
+    {{ form.metodo.label_tag }}
+    {{ form.metodo }}
+    {% if form.metodo.errors %}
+      <div class="text-danger small">{{ form.metodo.errors.as_text|linebreaksbr }}</div>
+    {% endif %}
+  </div>
+
+  <div class="mb-3">
+    {{ form.data_pagamento.label_tag }}
+    {{ form.data_pagamento }}
+    {% if form.data_pagamento.errors %}
+      <div class="text-danger small">{{ form.data_pagamento.errors.as_text|linebreaksbr }}</div>
+    {% endif %}
+  </div>
+
+  <button class="btn btn-success" id="submit-btn">Registrar</button>
+</form>
+
+<!-- Modal de aviso -->
+<div class="modal fade" id="excessoModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Pagamento maior que o devido</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="excesso-msg">O valor excede o devido.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+        <button type="button" id="ajustar-max" class="btn btn-primary">Ajustar ao máximo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  function normalizeNumber(s){
+    if(!s && s !== 0) return 0;
+    s = String(s).trim();
+    // remove currency symbols and spaces
+    s = s.replace(/[^0-9,\.\-]/g,'');
+    if(s.indexOf(',') > -1 && s.indexOf('.') > -1){
+      // format like '1.234,56' -> remove thousands dots and convert comma to dot
+      s = s.replace(/\./g, '').replace(',', '.');
+    } else {
+      // convert single comma to dot (e.g. '200,50' -> '200.50')
+      s = s.replace(',', '.');
+    }
+    var n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function parseAmountFromOptionText(text){
+    if(!text) return 0;
+    var m = text.match(/R\$\s*([0-9\.,]+)/);
+    if(!m) return 0;
+    return normalizeNumber(m[1]);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    var form = document.getElementById('pagamento-form');
+    if(!form) return;
+    var valorInput = document.getElementById('id_valor_pagamento');
+    var faltaSpan = document.getElementById('falta-valor');
+    var notaSelect = document.getElementById('id_nota');
+
+    var modalEl = document.getElementById('excessoModal');
+    var bsModal = (window.bootstrap && modalEl) ? new bootstrap.Modal(modalEl) : null;
+
+    var ajustarMaxBtn = document.getElementById('ajustar-max');
+    var msg = document.getElementById('excesso-msg');
+
+    // if initial_falta was passed in the context it should be in the span
+    // but if it's '0.00' and the nota option text contains the owed amount, use that
+    function currentFaltaValue(){
+      var text = (faltaSpan.textContent || faltaSpan.innerText || '').trim();
+      var val = normalizeNumber(text);
+      if(val === 0 && notaSelect && notaSelect.value){
+        // try parse from selected option label (ex: "Nota 4 — Vinicius Lima — R$ 200.00")
+        var opt = notaSelect.options[notaSelect.selectedIndex];
+        if(opt){
+          var parsed = parseAmountFromOptionText(opt.text);
+          if(parsed > 0) return parsed;
+        }
+      }
+      return val;
+    }
+
+    if(notaSelect){
+      notaSelect.addEventListener('change', function(){
+        var id = notaSelect.value;
+        // reset display
+        faltaSpan.textContent = '0.00';
+        if(!id) return;
+        // try server endpoint to get remaining amount (optional)
+        fetch('/notas/' + id + '/falta/')
+          .then(function(resp){ if(!resp.ok) throw new Error('no'); return resp.json(); })
+          .then(function(json){
+            if(json && (json.falta !== undefined)){
+              // ensure string with two decimals
+              var v = normalizeNumber(json.falta);
+              faltaSpan.textContent = v.toFixed(2);
+            } else {
+              // fallback: try parse from option text
+              var opt = notaSelect.options[notaSelect.selectedIndex];
+              faltaSpan.textContent = parseAmountFromOptionText(opt ? opt.text : '').toFixed(2);
+            }
+          }).catch(function(){
+            // fallback: parse from option text if endpoint not present or failed
+            var opt = notaSelect.options[notaSelect.selectedIndex];
+            faltaSpan.textContent = parseAmountFromOptionText(opt ? opt.text : '').toFixed(2);
+          });
+      });
+
+      // initialize display using selected option on load if span is zero
+      var initF = normalizeNumber(faltaSpan.textContent);
+      if(initF === 0 && notaSelect.value){
+        var opt = notaSelect.options[notaSelect.selectedIndex];
+        faltaSpan.textContent = parseAmountFromOptionText(opt ? opt.text : '').toFixed(2);
+      }
+    }
+
+    form.addEventListener('submit', function(e){
+      var falta = currentFaltaValue();
+      var val = normalizeNumber(valorInput.value);
+
+      if(val > falta){
+        e.preventDefault();
+        msg.textContent = 'Falta pagar apenas R$ ' + falta.toFixed(2).replace('.', ',');
+        if(bsModal){ bsModal.show(); }
+        else { alert(msg.textContent); }
+      }
+    });
+
+    if(ajustarMaxBtn){
+      ajustarMaxBtn.addEventListener('click', function(){
+        var falta = currentFaltaValue();
+        // set value using a dot decimal so server parses correctly
+        valorInput.value = falta.toFixed(2);
+        if(bsModal) bsModal.hide();
+      });
+    }
+  });
+})();
+</script>
+
+{% endblock %}

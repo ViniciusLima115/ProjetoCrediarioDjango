@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ cliente.nome }}{% endblock %}
+{% block content %}
+<h2>{{ cliente.nome }}</h2>
+<p><strong>Telefone:</strong> {{ cliente.telefone }}<br>
+<strong>Endereço:</strong> {{ cliente.endereco }}</p>
+<p><strong>Limite:</strong> R$ {{ cliente.limite_crediario }} — <strong>Saldo:</strong> R$ {{ cliente.saldo_devedor }}</p>
+
+<h4>Notas</h4>
+<ul class="list-group">
+  {% for n in notas %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <div>
+        <strong>#{{ n.pk }}</strong> — {{ n.data_nota }} — R$ {{ n.total }} — <span class="badge bg-secondary">{{ n.status }}</span>
+      </div>
+      <a href="{% url 'crediario:nota_detail' n.pk %}" class="btn btn-sm btn-outline-primary">Ver</a>
+    </li>
+  {% empty %}<li class="list-group-item">Sem notas.</li>{% endfor %}
+</ul>
+{% endblock %}

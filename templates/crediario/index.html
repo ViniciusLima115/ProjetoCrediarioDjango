@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<h3>Vencimentos próximos</h3>
+<ul>
+  {% for n in proximas %}
+    <li>{{ n.cliente.nome }} — Nota #{{ n.id }} — Vence: {{ n.vencimento }} — R$ {{ n.total }}</li>
+  {% empty %}
+    <li>Sem vencimentos próximos.</li>
+  {% endfor %}
+</ul>
+
+<h3>Top devedores</h3>
+<ul>
+  {% for c in devedores %}
+    <li>{{ c.nome }} — R$ {{ c.saldo_devedor }}</li>
+  {% empty %}
+    <li>Sem devedores.</li>
+  {% endfor %}
+</ul>
+
+<h3>Notificações pendentes (mock)</h3>
+<ul>
+  {% for x in pendentes %}
+    <li>{{ x.tipo }} — {{ x.destinatario }} — {{ x.status }}</li>
+  {% empty %}
+    <li>Sem notificações pendentes.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

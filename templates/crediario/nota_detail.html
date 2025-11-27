@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Nota {{ nota.pk }}{% endblock %}
+{% block content %}
+<h2>Nota #{{ nota.pk }}</h2>
+<p><strong>Cliente:</strong> {{ nota.cliente.nome }}</p>
+<p><strong>Data:</strong> {{ nota.data_nota }} — <strong>Vencimento:</strong> {{ nota.vencimento }}</p>
+<p><strong>Total:</strong> R$ {{ nota.total }} — <strong>Status:</strong> {{ nota.status }}</p>
+
+<h4>Itens</h4>
+<table class="table">
+  <thead><tr><th>Descrição</th><th>Quantidade</th><th>Preço</th><th>Subtotal</th></tr></thead>
+  <tbody>
+    {% for it in itens %}
+      <tr>
+        <td>{{ it.descricao }}</td>
+        <td>{{ it.quantidade }}</td>
+        <td>R$ {{ it.preco_unitario }}</td>
+        <td>R$ {{ it.subtotal }}</td>
+      </tr>
+    {% empty %}<tr><td colspan="4">Sem itens.</td></tr>{% endfor %}
+  </tbody>
+</table>
+
+<h4>Anexos</h4>
+<ul>
+  {% for a in anexos %}
+    <li><a href="{{ a.arquivo.url }}">{{ a.arquivo.name }}</a></li>
+  {% empty %}<li>Sem anexos.</li>{% endfor %}
+</ul>
+
+<h4>Pagamentos</h4>
+<ul>
+  {% for p in pagamentos %}
+    <li>R$ {{ p.valor_pagamento }} — {{ p.data_pagamento }}</li>
+  {% empty %}<li>Nenhum pagamento.</li>{% endfor %}
+</ul>
+{% endblock %}

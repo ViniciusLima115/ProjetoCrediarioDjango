@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Nova Nota{% endblock %}
+{% block content %}
+<h2>Nova Nota</h2>
+<form method="post">{% csrf_token %}
+  <div class="mb-3">
+    {{ form.non_field_errors }}
+    {{ form.as_p }}
+  </div>
+
+  <h5>Itens</h5>
+  <div id="formset">
+    {{ formset.management_form }}
+    {% for form in formset.forms %}
+      <div class="card mb-2 p-2">
+        {{ form.id }} 
+        <div class="row">
+          <div class="col-md-6">{{ form.descricao.label_tag }} {{ form.descricao }}</div>
+          <div class="col-md-2">{{ form.quantidade.label_tag }} {{ form.quantidade }}</div>
+          <div class="col-md-2">{{ form.preco_unitario.label_tag }} {{ form.preco_unitario }}</div>
+          <div class="col-md-2">{{ form.DELETE.label_tag }} {{ form.DELETE }}</div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <button type="submit" class="btn btn-primary">Salvar Nota</button>
+</form>
+{% endblock %}

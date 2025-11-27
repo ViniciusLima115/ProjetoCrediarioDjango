@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Notas{% endblock %}
+{% block content %}
+<h2>Notas recentes</h2>
+<table class="table">
+  <thead><tr><th>#</th><th>Cliente</th><th>Data</th><th>Vencimento</th><th>Total</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+    {% for n in notas %}
+    <tr>
+      <td>{{ n.pk }}</td>
+      <td>{{ n.cliente.nome }}</td>
+      <td>{{ n.data_nota }}</td>
+      <td>{{ n.vencimento }}</td>
+      <td>R$ {{ n.total }}</td>
+      <td>{{ n.status }}</td>
+      <td><a class="btn btn-sm btn-outline-primary" href="{% url 'crediario:nota_detail' n.pk %}">Abrir</a></td>
+    </tr>
+    {% empty %}<tr><td colspan="7">Nenhuma nota.</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% endblock %}
