@@ -29,16 +29,6 @@ Ele controla limites, saldos, itens da nota e impede pagamentos maiores que o va
 
 ## 📸 Screenshots
 
-Coloque estes arquivos na pasta `/screenshots`:
-
-```
-screenshots/notas.png  
-screenshots/pagamento.png  
-screenshots/modal_excesso.png  
-```
-
-E no README, aparecerão assim:
-
 ### Tela de Notas Recentes
 ![Notas](screenshots/notas.png)
 
